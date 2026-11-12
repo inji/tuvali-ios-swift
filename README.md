@@ -102,7 +102,7 @@ wallet.sendData(payload, resolver: { result in
 
 #### Start Advertisement
 
-`startAdvertisement` starts advertising under the given name and returns the URI to show as a QR code.
+`startAdvertisement` starts advertising and returns the URI to show as a QR code. On iOS every session advertises under a fresh random name, which the URI carries, so the argument is not used.
 
 ```swift
 import ios_tuvali_library
