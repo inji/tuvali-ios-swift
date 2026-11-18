@@ -87,6 +87,7 @@ public final class MdocPresenter: @unchecked Sendable {
         do {
             transport = try createTransport(engagement)
         } catch {
+            logger.error("Could not set up the connection to the reader: \(error)")
             // nothing was opened yet; only the fresh key needs destroying
             engagement.deviceKey.wipe()
             return .failed(.internalError, detail: "\(error)")
@@ -98,7 +99,13 @@ public final class MdocPresenter: @unchecked Sendable {
         do {
             result = try await exchange(engagement, transport, session, options, callbacks, progress)
         } catch {
-            result = Task.isCancelled ? .cancelled : resultFor(error, progress)
+            if Task.isCancelled {
+                result = .cancelled
+            } else {
+                // every session, transport and reader-key error ends here
+                logger.error("Presentation failed with \(type(of: error)): \(error)")
+                result = resultFor(error, progress)
+            }
         }
         // a new task does not inherit this one's cancellation, so the cleanup still reaches the reader
         await Task { await self.endPresentation(session, transport, progress) }.value

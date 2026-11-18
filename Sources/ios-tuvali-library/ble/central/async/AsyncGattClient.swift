@@ -331,6 +331,7 @@ final class AsyncGattClient: GattClient, GattPeripheralEvents, @unchecked Sendab
         guard connectionState == .connected else { return }
         let result = notificationContinuation.yield(GattNotification(characteristicUuid: characteristic.uuid, value: value))
         if case .dropped = result {
+            logger.error("More than \(maximumQueuedGattNotifications) notifications are waiting unread; closing the connection")
             notificationContinuation.finish(throwing: GattNotificationOverflowError())
             close()
         }
