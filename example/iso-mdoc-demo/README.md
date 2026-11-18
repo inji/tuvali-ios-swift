@@ -41,4 +41,3 @@ xcodebuild test -scheme ios-tuvali-library \
 ```
 
 The simulator can check UI and builds; Bluetooth interoperability requires real hardware.
-See [the ISO review](../../docs/iso-review.md) for findings, measurements and remaining conformance gates.
