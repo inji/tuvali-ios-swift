@@ -3,6 +3,19 @@ import Foundation
 import Security
 
 private let logger = TaggedLogger(tag: "MdocPresenter")
+
+/// Errors from the wallet's callbacks may carry its data, so only their type is logged.
+func isTuvaliError(_ error: Error) -> Bool {
+    String(reflecting: type(of: error)).hasPrefix("ios_tuvali_library.")
+}
+
+private func logFailure(_ error: Error, _ what: String = "Presentation failed") {
+    if isTuvaliError(error) {
+        logger.error("\(what) with \(type(of: error)): \(error)")
+    } else {
+        logger.error("\(what) with \(type(of: error)) from the wallet")
+    }
+}
 // how long the cleanup may spend telling the reader and closing the connection
 private let cleanupStepTimeout: TimeInterval = 2
 
@@ -87,7 +100,7 @@ public final class MdocPresenter: @unchecked Sendable {
         do {
             transport = try createTransport(engagement)
         } catch {
-            logger.error("Could not set up the connection to the reader: \(error)")
+            logFailure(error, "Could not set up the connection to the reader")
             // nothing was opened yet; only the fresh key needs destroying
             engagement.deviceKey.wipe()
             return .failed(.internalError, detail: "\(error)")
@@ -102,8 +115,7 @@ public final class MdocPresenter: @unchecked Sendable {
             if Task.isCancelled {
                 result = .cancelled
             } else {
-                // every session, transport and reader-key error ends here
-                logger.error("Presentation failed with \(type(of: error)): \(error)")
+                logFailure(error)
                 result = resultFor(error, progress)
             }
         }

@@ -42,6 +42,15 @@ final class MdocPresenterTests: XCTestCase {
         return Task { try await presenter.present(options: chosen, callbacks: callbacks) }
     }
 
+    func testLogsDetailOnlyForTuvaliErrors() {
+        // a protocol error from Tuvali, and an error the wallet's callback threw
+        let tuvaliError = CborDecodingError("Truncated CBOR input")
+        let walletError = NSError(domain: "wallet", code: 1, userInfo: [NSLocalizedDescriptionKey: "card 42 failed"])
+
+        XCTAssertTrue(isTuvaliError(tuvaliError))
+        XCTAssertFalse(isTuvaliError(walletError))
+    }
+
     func testRejectsInvalidTimeoutsBeforeOpeningBluetooth() async {
         for value in [TimeInterval.nan, .infinity, -.infinity, -1, 0, .greatestFiniteMagnitude] {
             var invalid = options
