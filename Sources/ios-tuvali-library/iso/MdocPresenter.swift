@@ -57,9 +57,9 @@ public final class MdocPresenter: @unchecked Sendable {
     /// calling task is cancelled (cancel() instead returns MdocResult.cancelled).
     public func present(options: MdocPresentationOptions, callbacks: MdocCallbacks) async throws -> MdocResult {
         try Task.checkCancellation()
-        guard [options.engagementTimeout, options.inactivityTimeout].allSatisfy({
-            $0.isFinite && $0 > 0 && $0 <= 365 * 24 * 60 * 60
-        }) else { throw MdocPresentationError.invalidTimeout }
+        guard isAllowedTimeout(options.engagementTimeout), isAllowedTimeout(options.inactivityTimeout) else {
+            throw MdocPresentationError.invalidTimeout
+        }
         let trustedRoots = try parseCertificates(options.trustedReaderRoots)
         let presentation: Task<MdocResult, Never> = try locked {
             guard running == nil else { throw MdocPresentationError.alreadyRunning }
