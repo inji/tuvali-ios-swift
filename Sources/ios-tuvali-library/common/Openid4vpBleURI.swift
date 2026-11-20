@@ -17,6 +17,12 @@ class OpenId4vpURI {
     }
     
     func isValid() -> Bool {
-        return self.urlComponents?.scheme == URI_IDENTIFIER && getName() != nil && getHexPK() != nil
+        return self.urlComponents?.scheme == URI_IDENTIFIER && getName() != nil && isX25519HexKey(getHexPK())
+    }
+
+    // the key is decoded without checks later, and a malformed one would crash the app
+    private func isX25519HexKey(_ key: String?) -> Bool {
+        guard let key, key.count == 64 else { return false }
+        return key.allSatisfy(\.isHexDigit)
     }
 }
