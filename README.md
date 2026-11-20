@@ -22,7 +22,7 @@ The Verifier device generates a URI using the `startAdvertisement()` method and 
 OPENID4VP://connect?name=STADONENTRY&key=8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a
 ```
 URI structure can be found in the [spec](https://bitbucket.org/openid/connect/src/master/openid-4-verifiable-presentations-over-ble/openid-4-verifiable-presentations-over-ble-1_0.md).
-Currently the library doesnot support iOS as a verifier.But it can act as a wallet for android verifier.
+An iOS device can act as either the Verifier or the Wallet.
 
 ### Wallet
 
@@ -98,6 +98,39 @@ wallet.sendData(payload, resolver: { result in
 })
 ```
 
+### Verifier Usage:
+
+#### Start Advertisement
+
+`startAdvertisement` starts advertising under the given name and returns the URI to show as a QR code.
+
+```swift
+import ios_tuvali_library
+
+let verifier = Verifier()
+verifier.subscribe { event in
+  if let received = event as? DataReceivedEvent {
+    print("Received: \(received.data)")
+  }
+}
+let uri = verifier.startAdvertisement("STADONENTRY")
+```
+
+#### Send Verification Status
+
+After checking the received data, tell the Wallet whether it was accepted.
+
+```swift
+verifier.sendVerificationStatus(.ACCEPTED) // or .REJECTED
+```
+
+#### Disconnect
+
+```swift
+verifier.disconnect()
+verifier.unsubscribe()
+```
+
 ## Events
 Tuvali sends multiple events to propagate connection status, received data etc. These events can be subscribed to by calling:
 ### Wallet Events
@@ -107,6 +140,11 @@ WalletModule.handleDataEvents {
 // implementation
 }
 ```
+
+### Verifier Events
+
+1. DataReceivedEvent
+   * when the Wallet's data has been received, decrypted and decompressed, with `data`, `crcFailureCount` and `totalChunkCount`
 
 ### Common Events
 Events which are emitted by both Wallet and Verifier
@@ -121,7 +159,7 @@ Events which are emitted by both Wallet and Verifier
    * on BLE disconnection between Wallet and Verifier
 
 ## Note
-Currently, data transfer is supported from Wallet to Verifier only. Verifier functionalities are not available for iOS at the moment.
+Currently, data transfer is supported from Wallet to Verifier only.
 
 ## ISO 18013-5 mdoc session testing
 
