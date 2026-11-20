@@ -36,13 +36,11 @@ extension WalletBleCommunicator: WalletBleCommunicatorProtocol {
     }
 
     func shouldConnectToDiscoveredPeripheral(advertisementData: [String: Any]) -> Bool {
-        // iOS peripherals cannot advertise service data. For iOS verifier discovery,
-        // the QR URI carries the verifier public key and local name is only a hint.
-        guard verifierPublicKey != nil else {
+        // iOS verifiers cannot advertise service data, so the QR name is the only way to tell them apart
+        guard verifierPublicKey != nil,
+              let advName,
+              let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String else {
             return false
-        }
-        guard let advName, let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String else {
-            return true
         }
         return localName == advName
     }

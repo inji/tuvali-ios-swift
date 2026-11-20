@@ -32,4 +32,39 @@ final class WalletDiscoveryTests: XCTestCase {
 
         XCTAssertFalse(uri(key: fiveBytes).isValid())
     }
+
+    private func communicator(expectingName name: String) -> WalletBleCommunicator {
+        let communicator = WalletBleCommunicator()
+        communicator.setVerifierPublicKey(publicKeyData: Data(repeating: 0xAB, count: 32))
+        communicator.setAdvName(name)
+        return communicator
+    }
+
+    func testTheWalletConnectsToAnIOSVerifierAdvertisingTheQRName() {
+        let communicator = communicator(expectingName: "AbCd1234")
+
+        let shouldConnect = communicator.shouldConnectToDiscoveredPeripheral(
+            advertisementData: [CBAdvertisementDataLocalNameKey: "AbCd1234"]
+        )
+
+        XCTAssertTrue(shouldConnect)
+    }
+
+    func testTheWalletIgnoresADeviceAdvertisingAnotherName() {
+        let communicator = communicator(expectingName: "AbCd1234")
+
+        let shouldConnect = communicator.shouldConnectToDiscoveredPeripheral(
+            advertisementData: [CBAdvertisementDataLocalNameKey: "Other123"]
+        )
+
+        XCTAssertFalse(shouldConnect)
+    }
+
+    func testTheWalletIgnoresADeviceWithoutALocalNameSoItKeepsScanningForTheQRVerifier() {
+        let communicator = communicator(expectingName: "AbCd1234")
+
+        let shouldConnect = communicator.shouldConnectToDiscoveredPeripheral(advertisementData: [:])
+
+        XCTAssertFalse(shouldConnect)
+    }
 }
