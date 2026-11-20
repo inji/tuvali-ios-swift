@@ -1,15 +1,72 @@
 import Foundation
 
 @objc(Verifier)
-class Verifier: NSObject {
-    
+public class Verifier: NSObject {
+    @available(iOS 13.0, *)
+    private var bleCommunicator: VerifierBleCommunicator?
+    private let eventEmitter = EventEmitter.sharedInstance
+
+    public override init() {
+        super.init()
+        ErrorHandler.sharedInstance.setOnError(onError: self.handleError)
+    }
+
+    // iOS cannot advertise service data, so a fresh name per session is how wallets tell verifiers apart
+    @available(iOS 13.0, *)
+    public func startAdvertisement(_ advIdentifier: String) -> String {
+        bleCommunicator?.stop()
+        let name = Self.freshAdvertisementName()
+        let communicator = VerifierBleCommunicator(eventEmitter: eventEmitter)
+        bleCommunicator = communicator
+        communicator.startAdvertisement(advIdentifier: name)
+        return Self.connectionURI(name: name, publicKey: communicator.publicKey)
+    }
+
+    // 8 characters: iOS truncates longer advertised names, which then never match the QR
+    static func freshAdvertisementName() -> String {
+        let bytes = Data((0..<6).map { _ in UInt8.random(in: .min ... .max) })
+        return bytes.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    static func connectionURI(name: String, publicKey: Data) -> String {
+        var components = URLComponents()
+        components.scheme = "OPENID4VP"
+        components.host = "connect"
+        components.queryItems = [
+            URLQueryItem(name: "name", value: name),
+            URLQueryItem(name: "key", value: publicKey.toHex())
+        ]
+        return components.string!
+    }
+
+    @available(iOS 13.0, *)
+    public func disconnect() {
+        bleCommunicator?.stop()
+        bleCommunicator = nil
+    }
+
+    @available(iOS 13.0, *)
+    public func sendVerificationStatus(_ status: VerificationStatusEvent.VerificationStatus) {
+        bleCommunicator?.notifyVerificationStatus(accepted: status == .ACCEPTED)
+    }
+
+    public func subscribe(_ listener: @escaping (Event) -> Void) {
+        eventEmitter.addListener(listener: listener)
+    }
+
+    public func unsubscribe() {
+        eventEmitter.removeListeners()
+    }
+
     func getModuleName(completion: @escaping ([String]) -> Void) {
-            DispatchQueue.global(qos: .userInitiated).async {
-                completion(["iOS Verifier"])
-            }
+        DispatchQueue.global(qos: .userInitiated).async {
+            completion(["iOS Verifier"])
         }
-        
-    
+    }
+
     @objc
     static func requiresMainQueueSetup() -> Bool {
         return true
@@ -21,5 +78,9 @@ class Verifier: NSObject {
             "name": "verifier",
             "platform": "ios"
         ]
+    }
+
+    private func handleError(_ message: String, _ code: String) {
+        eventEmitter.emitErrorEvent(message: message, code: code)
     }
 }

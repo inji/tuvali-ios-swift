@@ -35,6 +35,16 @@ extension WalletBleCommunicator: WalletBleCommunicatorProtocol {
         }
     }
 
+    func shouldConnectToDiscoveredPeripheral(advertisementData: [String: Any]) -> Bool {
+        // iOS verifiers cannot advertise service data, so the QR name is the only way to tell them apart
+        guard verifierPublicKey != nil,
+              let advName,
+              let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String else {
+            return false
+        }
+        return localName == advName
+    }
+
     func createConnectionHandler() {
         createConnection?()
     }
@@ -49,5 +59,4 @@ extension WalletBleCommunicator: TransferHandlerDelegate {
         }
     }
 }
-
 
