@@ -19,6 +19,7 @@ class Peripheral: NSObject {
     var pendingAdvertisementName: String?
     var serviceAdded = false
     var maxDataBytes = BLEConstants.MAX_ALLOWED_DATA_LEN
+    var subscriptions = CentralSubscriptions()
 
     static let SERVICE_UUID = CBUUID(string: "00000001-0000-1000-8000-00805f9b34fb")
     static let SCAN_RESPONSE_SERVICE_UUID = CBUUID(string: "00000002-0000-1000-8000-00805f9b34fb")
@@ -41,6 +42,7 @@ class Peripheral: NSObject {
         peripheralManager.removeAllServices()
         serviceAdded = false
         characteristics.removeAll()
+        subscriptions.removeAll()
         verifierDelegate?.onDeviceDisconnected()
     }
 

@@ -20,12 +20,14 @@ extension Peripheral: CBPeripheralManagerDelegate {
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
         logger.info("Central subscribed to characteristic")
         maxDataBytes = min(central.maximumUpdateValueLength, BLEConstants.MAX_ALLOWED_DATA_LEN)
+        guard subscriptions.subscribe(central: central.identifier, characteristic: characteristic.uuid) else { return }
         verifierDelegate?.onDeviceConnected()
         peripheral.stopAdvertising()
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
         logger.info("Central unsubscribed from characteristic")
+        guard subscriptions.unsubscribe(central: central.identifier, characteristic: characteristic.uuid) else { return }
         verifierDelegate?.onDeviceDisconnected()
     }
     
