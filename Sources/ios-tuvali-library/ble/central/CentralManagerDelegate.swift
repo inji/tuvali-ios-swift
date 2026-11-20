@@ -8,6 +8,8 @@ extension Central {
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
 
+        // scanning goes on until didConnect, so a second match must not replace the first
+        guard connectedPeripheral == nil else { return }
         let dataDict = advertisementData["kCBAdvDataServiceData"] as? [CBUUID: Any?]
         if let uuidDict = dataDict, let data = uuidDict[CBUUID(string: "00000002-0000-1000-8000-00805f9b34fb")], let data = data {
             let scanResponseData = dataDict?[CBUUID(string: "00000002-0000-1000-8000-00805f9b34fb")]  as! Data
@@ -40,5 +42,8 @@ extension Central {
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        if peripheral == connectedPeripheral {
+            connectedPeripheral = nil
+        }
     }
 }
