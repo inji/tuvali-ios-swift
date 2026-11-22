@@ -1,5 +1,11 @@
 import Foundation
 
+let maximumAllowedTimeoutInSeconds: TimeInterval = 365 * 24 * 60 * 60
+
+func isAllowedTimeout(_ timeout: TimeInterval) -> Bool {
+    timeout.isFinite && timeout > 0 && timeout <= maximumAllowedTimeoutInSeconds
+}
+
 private enum TimedOutcome<T>: @unchecked Sendable {
     case finished(T)
     case timedOut
@@ -9,7 +15,7 @@ private enum TimedOutcome<T>: @unchecked Sendable {
 /// cancelled, and this returns only once it has finished, so nothing it does outlives the call.
 /// The operation should therefore end soon after its task is cancelled.
 func withTimeout<T>(_ seconds: TimeInterval, _ operation: @escaping @Sendable () async throws -> T) async throws -> T? {
-    guard seconds.isFinite, seconds >= 0, seconds <= 365 * 24 * 60 * 60 else {
+    guard seconds.isFinite, seconds >= 0, seconds <= maximumAllowedTimeoutInSeconds else {
         throw MdocPresentationError.invalidTimeout
     }
     try Task.checkCancellation()
